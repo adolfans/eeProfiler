@@ -7,10 +7,14 @@ int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
 	InitializeSocket();
-	Monitor w;
-	//w.show();
 	ConnectDialog dlg;
 	dlg.show();
+	if( dlg.result() == QDialog::Accepted )
+	{
+		Monitor w;
+		w.SocketConnnected( dlg.GetConnectedSocket() );
+		w.show();
+	}
 	int returnValue = a.exec();
 	UninitializeSocket();
 	return returnValue;

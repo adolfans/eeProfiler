@@ -18,12 +18,11 @@ class ConnectDialog : public QDialog
 public:
 	ConnectDialog(QWidget *parent = 0);
 	~ConnectDialog();
-
-	static bool ConnectTo( QString& server, int& port );
-
+	int GetConnectedSocket();
 public slots:
 	void onConnect();
 private:
+	bool TryToConnect( const char* address, int port );
 
 	QLabel *hostLabel;
 	QLabel *portLabel;
@@ -35,6 +34,8 @@ private:
 	QPushButton *connectButton;
 	QPushButton *quitButton;
 	QDialogButtonBox *buttonBox;
+
+	int clientFd;
 };
 
 #endif // CONNECTDIALOG_H

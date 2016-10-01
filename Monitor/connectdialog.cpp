@@ -78,15 +78,10 @@ ConnectDialog::~ConnectDialog()
 
 }
 
-bool ConnectDialog::ConnectTo( QString& server, int& port )
+int ConnectDialog::GetConnectedSocket()
 {
-	ConnectDialog dlg;
-	dlg.show();
-
-	return true;
+	return clientFd;
 }
-
-bool TryToConnect( const char* address, int port );
 
 //-----------------------------------------------------------------------
 void ConnectDialog::onConnect()
@@ -106,19 +101,19 @@ void ConnectDialog::onConnect()
 #include <WinSock2.h>
 
 //-----------------------------------------------------------------------
-bool TryToConnect( const char* address, int port )
+bool ConnectDialog::TryToConnect( const char* address, int port )
 {
-	int clientFd = socket( AF_INET, SOCK_STREAM, 0 );
+	clientFd = ::socket( AF_INET, SOCK_STREAM, 0 );
 
 	bool closeSocketAndReturnFalse = false;
 
-	sockaddr_in servaddr;
+	::sockaddr_in servaddr;
 	memset( &servaddr, 0, sizeof(servaddr) );
 	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = inet_addr( address );
-	servaddr.sin_port = htons( port );
+	servaddr.sin_addr.s_addr = ::inet_addr( address );
+	servaddr.sin_port = ::htons( port );
 
-	int bindResult = connect( clientFd, (sockaddr*)&servaddr, sizeof(servaddr) );
+	int bindResult = ::connect( clientFd, (::sockaddr*)&servaddr, sizeof(servaddr) );
 	if( bindResult == SOCKET_ERROR )
 	{
 		int errorcode = errno;
@@ -128,7 +123,7 @@ bool TryToConnect( const char* address, int port )
 
 	if( closeSocketAndReturnFalse )
 	{
-		closesocket( clientFd );
+		::closesocket( clientFd );
 		return false;
 	}
 

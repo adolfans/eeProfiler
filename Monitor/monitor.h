@@ -11,7 +11,7 @@ class Monitor : public QMainWindow
 public:
 	Monitor(QWidget *parent = 0, Qt::WFlags flags = 0);
 	~Monitor();
-
+	void SocketConnnected( int );
 private:
 	Ui::MonitorClass ui;
 };

@@ -10,3 +10,8 @@ Monitor::~Monitor()
 {
 
 }
+
+void Monitor::SocketConnnected( int )
+{
+
+}
