@@ -6,6 +6,7 @@
 class QLabel;
 class QLineEdit;
 class QDialogButtonBox;
+class Receiver;
 /*
 ===========================================
 class ConnectDialog
@@ -18,7 +19,7 @@ class ConnectDialog : public QDialog
 public:
 	ConnectDialog(QWidget *parent = 0);
 	~ConnectDialog();
-	int GetConnectedSocket();
+	Receiver* GetConnectedReceiver();
 public slots:
 	void onConnect();
 private:
@@ -35,7 +36,7 @@ private:
 	QPushButton *quitButton;
 	QDialogButtonBox *buttonBox;
 
-	int clientFd;
+	Receiver* clientReceiver;
 };
 
 #endif // CONNECTDIALOG_H

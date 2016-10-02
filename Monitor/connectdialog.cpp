@@ -6,13 +6,15 @@
 #include <QGridLayout>
 #include <QDialogButtonBox>
 #include <QPushButton>
+#include "ProfilerClient.h"
 ConnectDialog::ConnectDialog(QWidget *parent)
-	: QDialog(parent)
+	: QDialog(parent),
+	clientReceiver( NULL )
 {
-
 	hostLabel = new QLabel(tr("&Server name:"));
 	portLabel = new QLabel(tr("S&erver port:"));
 
+	
 #if 0
 	// find out which IP to connect to
 	QString ipAddress;
@@ -71,16 +73,18 @@ ConnectDialog::ConnectDialog(QWidget *parent)
 	portLineEdit->setFocus();
 
 	setLayout(mainLayout);
+
+	clientReceiver = new Receiver;
 }
 
 ConnectDialog::~ConnectDialog()
 {
-
+	delete clientReceiver;
 }
 
-int ConnectDialog::GetConnectedSocket()
+Receiver* ConnectDialog::GetConnectedReceiver()
 {
-	return clientFd;
+	return clientReceiver;
 }
 
 //-----------------------------------------------------------------------
@@ -99,33 +103,10 @@ void ConnectDialog::onConnect()
 }
 
 #include <WinSock2.h>
+#include "ProfilerClient.h"
 
 //-----------------------------------------------------------------------
 bool ConnectDialog::TryToConnect( const char* address, int port )
 {
-	clientFd = ::socket( AF_INET, SOCK_STREAM, 0 );
-
-	bool closeSocketAndReturnFalse = false;
-
-	::sockaddr_in servaddr;
-	memset( &servaddr, 0, sizeof(servaddr) );
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = ::inet_addr( address );
-	servaddr.sin_port = ::htons( port );
-
-	int bindResult = ::connect( clientFd, (::sockaddr*)&servaddr, sizeof(servaddr) );
-	if( bindResult == SOCKET_ERROR )
-	{
-		int errorcode = errno;
-		printf( "Failed to connect, errorcode: %d", (int)port, errorcode );
-		closeSocketAndReturnFalse = true;
-	}
-
-	if( closeSocketAndReturnFalse )
-	{
-		::closesocket( clientFd );
-		return false;
-	}
-
-	return true;
+	return clientReceiver->ConnectTo( address, port );
 }

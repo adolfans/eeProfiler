@@ -4,9 +4,58 @@
 #include "ProfilerNetwork.h"
 #include "ProfilerClient.h"
 #include <sstream>
-#include <WinSock.h>
+#include <WinSock2.h>
 
-bool WaitToReceivePacket( int socket, sFrameResult& result )
+//-----------------------------------------------------------------------
+Receiver::Receiver()
+	:connected( false )
+{
+
+}
+
+//-----------------------------------------------------------------------
+Receiver::~Receiver()
+{
+
+}
+
+//-----------------------------------------------------------------------
+bool Receiver::ConnectTo( const char* address, int port )
+{
+	if( connected )
+		return true;
+
+	socket = ::socket( AF_INET, SOCK_STREAM, 0 );
+
+	bool closeSocketAndReturnFalse = false;
+
+	::sockaddr_in servaddr;
+	memset( &servaddr, 0, sizeof(servaddr) );
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = ::inet_addr( address );
+	servaddr.sin_port = ::htons( port );
+
+	int bindResult = ::connect( socket, (::sockaddr*)&servaddr, sizeof(servaddr) );
+	if( bindResult == SOCKET_ERROR )
+	{
+		int errorcode = errno;
+		printf( "Failed to connect, errorcode: %d", (int)port, errorcode );
+		closeSocketAndReturnFalse = true;
+	}
+
+	if( closeSocketAndReturnFalse )
+	{
+		::closesocket( socket );
+		return NULL;
+	}
+
+	connected = true;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------
+bool Receiver::WaitToReceivePacket( sFrameResult& result )
 {
 	//Try to dispatch packet
 
@@ -24,5 +73,17 @@ bool WaitToReceivePacket( int socket, sFrameResult& result )
 
 	result << dataStream;
 
+	return true;
+}
+
+//-----------------------------------------------------------------------
+bool Receiver::CloseConnection()
+{
+	if( connected )
+	{
+		shutdown( socket, SD_RECEIVE );
+		closesocket( socket );
+		connected = false;
+	}
 	return true;
 }

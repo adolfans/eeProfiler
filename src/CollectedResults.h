@@ -55,6 +55,7 @@ public:
 	void operator << ( std::stringstream& inputStream );
 
 private:
+	sFrameResult( const sFrameResult& ){}
 	int numFrames;
 	float m_length;
 	sProfileEntry* firstEntry;

@@ -41,6 +41,7 @@ void ProfileEnd( ProfileHandle* handle )
 	handle->bEnded = true;
 }
 
+#if 0
 /*
 ===========================================
 class SerializedProfileData
@@ -79,17 +80,19 @@ void SerializedProfileData::EndFrame()
 	serializedData += "]}";
 }
 
+#endif
+
 static LARGE_INTEGER		sFrequencyRT;
 static double				sClocksToMilisecondsMultiplier;
 static LARGE_INTEGER		sFrameBeginClocks;
 static LARGE_INTEGER		sFrameClocksBuiltUp;
 static long long			sClocksPerSample;
 
-struct ProfileInitializer
+static struct ProfileInitializer
 {
 	ProfileInitializer();
 	~ProfileInitializer(){}
-} ;
+} s_localInitializer;
 
 ProfileInitializer::ProfileInitializer()
 {
@@ -106,7 +109,6 @@ void FrameBegin()
 
 void FrameEnd()
 {
-	static ProfileInitializer s_localInitializer;
 	LARGE_INTEGER endClocks;
 	QueryPerformanceCounter( &endClocks );
 	static long long numFrame = 0;		// Number of frames captured 

@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 	if( dlg.result() == QDialog::Accepted )
 	{
 		Monitor w;
-		w.SocketConnnected( dlg.GetConnectedSocket() );
+		w.Connected( dlg.GetConnectedReceiver() );
 		w.show();
 	}
 	int returnValue = a.exec();
