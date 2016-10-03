@@ -5,12 +5,14 @@
 #include "Profiler.h"
 #include <time.h>
 #include <windows.h>
-#define  TEST_TIME_LENGTH	(1000*30)		//30 seconds
+#define  TEST_TIME_LENGTH	(1000*30* 300 )		//30 seconds
 int _tmain(int argc, _TCHAR* argv[])
 {
 	//Fake profile information to test monitor
 	InitializeSocket();
 	srand( ( unsigned int )time(NULL) );
+
+	InitializeServer();
 
 	int sleptTimeBuiltUp = 0;
 	for( ; ; )

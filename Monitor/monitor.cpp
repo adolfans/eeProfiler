@@ -29,7 +29,7 @@ void Monitor::Connected( Receiver* receiver )
 	connect(this, SIGNAL(startAsyncWork()), worker, SLOT(onStart()));
 	connect(worker, SIGNAL(onReceived(sFrameResult*)), this, SLOT(handleResults(sFrameResult*)));
 	receiveThread.start();
-	
+	emit startAsyncWork();
 }
 
 //-----------------------------------------------------------------------

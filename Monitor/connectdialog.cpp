@@ -7,6 +7,8 @@
 #include <QDialogButtonBox>
 #include <QPushButton>
 #include "ProfilerClient.h"
+#include "monitor.h"
+
 ConnectDialog::ConnectDialog(QWidget *parent)
 	: QDialog(parent),
 	clientReceiver( NULL )
@@ -44,7 +46,7 @@ ConnectDialog::ConnectDialog(QWidget *parent)
 
 	connectButton = new QPushButton(tr("Connect"));
 	connectButton->setDefault(true);
-	connectButton->setEnabled(false);
+	connectButton->setEnabled(true);
 
 	quitButton = new QPushButton(tr("Quit"));
 
@@ -54,11 +56,6 @@ ConnectDialog::ConnectDialog(QWidget *parent)
 
 	connect(connectButton, SIGNAL(clicked()), this, SLOT(onConnect()));
 	connect(quitButton, SIGNAL(clicked()), this, SLOT(close()));
-
-	connect(hostLineEdit, SIGNAL(textChanged(QString)),
-		this, SLOT(enableGetFortuneButton()));
-	connect(portLineEdit, SIGNAL(textChanged(QString)),
-		this, SLOT(enableGetFortuneButton()));
 	
 	QGridLayout *mainLayout = new QGridLayout;
 	mainLayout->addWidget(hostLabel, 0, 0);
@@ -99,6 +96,9 @@ void ConnectDialog::onConnect()
 	}else
 	{
 		accept();
+		Monitor* w = new Monitor( this );
+		w->Connected( GetConnectedReceiver() );
+		w->show();
 	}
 }
 

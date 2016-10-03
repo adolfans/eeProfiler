@@ -74,6 +74,15 @@
     <ClCompile Include="GeneratedFiles\Release\moc_connectdialog.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="curverenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_curverenderer.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_curverenderer.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="monitor.h">
@@ -86,6 +95,9 @@
       <Filter>Resource Files</Filter>
     </CustomBuild>
     <CustomBuild Include="connectdialog.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="curverenderer.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>

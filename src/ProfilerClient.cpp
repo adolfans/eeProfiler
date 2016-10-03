@@ -62,8 +62,14 @@ bool Receiver::WaitToReceivePacket( sFrameResult& result )
 	uint32_t packetSize = 0;
 	int rs = recv( socket, (char*)&packetSize, sizeof(uint32_t), 0 );
 
+	if( rs == SOCKET_ERROR )
+		return false;
+
 	std::vector<char> dataBuffer( packetSize );
 	int resultValue = recv( socket, &dataBuffer[0], packetSize, 0 );
+
+	if( resultValue == SOCKET_ERROR )
+		return false;
 
 	//sProfilePacket packet( packetSize );
 	//packet.FillData( (void*)&dataBuffer[0], packetSize );

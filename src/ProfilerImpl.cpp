@@ -8,7 +8,7 @@
 #include "ProfilerNetwork.h"
 #include "CollectedResults.h"
 
-#define TIME_PER_SAMPLE 200			//Commit one result every 200 milliseconds
+#define TIME_PER_SAMPLE 1000			//Commit one result every 1000 milliseconds
 
 struct ProfileHandle
 {
@@ -97,8 +97,9 @@ static struct ProfileInitializer
 ProfileInitializer::ProfileInitializer()
 {
 	QueryPerformanceFrequency( &sFrequencyRT );
-	sClocksToMilisecondsMultiplier = 1.0f / ( double )sFrequencyRT.QuadPart;
-	sClocksPerSample = TIME_PER_SAMPLE * sFrequencyRT.QuadPart;
+	sClocksToMilisecondsMultiplier = 1000.0 / ( double )sFrequencyRT.QuadPart;
+	sClocksPerSample = ( long long )( (double)TIME_PER_SAMPLE * (double)sFrequencyRT.QuadPart * 0.001 );
+	sFrameClocksBuiltUp.QuadPart = 0;
 }
 
 void FrameBegin()
@@ -118,7 +119,6 @@ void FrameEnd()
 	{
 		sFrameResult data;
 		double frameTime = (double)sFrameClocksBuiltUp.QuadPart * sClocksToMilisecondsMultiplier;
-		//data.BeginFrame( numFrame, frameTime );
 		data.SetNumFrames( numFrame );
 		data.SetLength( frameTime );
 		numFrame = 0;
@@ -139,6 +139,8 @@ void FrameEnd()
 		std::stringstream strm;
 		data >> strm;
 		sProfilePacket packet( strm );
+		SendPacket( packet );
+		sFrameClocksBuiltUp.QuadPart = 0;
 	}
 }
 
@@ -224,7 +226,7 @@ void sFrameResult::SetLength( float time )
 //-----------------------------------------------------------------------
 void sFrameResult::AddEntry( const char* name, float time )
 {
-	if( firstEntry == lastEntry == NULL )
+	if( lastEntry == NULL )
 	{
 		firstEntry = lastEntry = new sProfileEntry;
 		firstEntry->name = name;
@@ -257,10 +259,26 @@ void sFrameResult::operator >>( std::stringstream& outputStream ) const
 	}
 
 	outputStream << "]}";
+
+
+/*
+{
+"Frame":-858993460,
+"Time":200.017,
+"Entries":
+[
+{
+"Name":"test",
+"Time":64.1617
+}
+]
+}
+
+*/
 }
 
 //-----------------------------------------------------------------------
 void sFrameResult::operator<<( std::stringstream& inputStream )
 {
-	//inputStream >> 
+	//inputStream.ignore( )
 }
