@@ -21,11 +21,11 @@ struct sProfileEntry
 	~sProfileEntry();
 	sProfileEntry* Next() const;
 	const char* GetName() const;
-	float GetTime() const;
+	double GetTime() const;
 
 private:
 	std::string name;
-	float	time;
+	double	time;
 	sProfileEntry* next;
 };
 
@@ -42,22 +42,26 @@ public:
 	~sFrameResult();
 
 	//Getters
-	int GetNumFrames() const;
-	float GetLength() const;
+	unsigned long GetNumFrames() const;
+	double GetLength() const;
+	double GetTimeStamp() const;
+
 	sProfileEntry* GetFirstProfileEntry() const;
 
 	//Setters
-	void SetNumFrames( int );
-	void SetLength( float time );
-	void AddEntry( const char*, float time );
+	void SetNumFrames( unsigned long );
+	void SetLength( double time );
+	void SetTimestamp( double timeStamp );
+	void AddEntry( const char*, double time );
 
 	void operator >> ( std::stringstream& outputStream ) const;
 	void operator << ( std::stringstream& inputStream );
 
 private:
-	sFrameResult( const sFrameResult& ){}
-	int numFrames;
-	float m_length;
+	sFrameResult( const sFrameResult& );
+	unsigned long m_numFrames;
+	double m_length;
+	double m_timeStamp;
 	sProfileEntry* firstEntry;
 	sProfileEntry* lastEntry;
 };

@@ -11,7 +11,8 @@
 
 ConnectDialog::ConnectDialog(QWidget *parent)
 	: QDialog(parent),
-	clientReceiver( NULL )
+	clientReceiver( NULL ),
+	monitor( NULL )
 {
 	hostLabel = new QLabel(tr("&Server name:"));
 	portLabel = new QLabel(tr("S&erver port:"));
@@ -79,9 +80,10 @@ ConnectDialog::~ConnectDialog()
 	delete clientReceiver;
 }
 
-Receiver* ConnectDialog::GetConnectedReceiver()
+//-----------------------------------------------------------------------
+void ConnectDialog::setMonitor( Monitor* _monitor )
 {
-	return clientReceiver;
+	monitor = _monitor;
 }
 
 //-----------------------------------------------------------------------
@@ -96,9 +98,7 @@ void ConnectDialog::onConnect()
 	}else
 	{
 		accept();
-		Monitor* w = new Monitor( this );
-		w->Connected( GetConnectedReceiver() );
-		w->show();
+		monitor->show();
 	}
 }
 

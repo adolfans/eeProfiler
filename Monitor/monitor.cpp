@@ -35,7 +35,7 @@ void Monitor::Connected( Receiver* receiver )
 //-----------------------------------------------------------------------
 void Monitor::handleResults( sFrameResult* rs )
 {
-	
+	rs->GetTimeStamp();
 	delete rs;
 }
 

@@ -7,6 +7,7 @@ class QLabel;
 class QLineEdit;
 class QDialogButtonBox;
 class Receiver;
+class Monitor;
 /*
 ===========================================
 class ConnectDialog
@@ -19,7 +20,7 @@ class ConnectDialog : public QDialog
 public:
 	ConnectDialog(QWidget *parent = 0);
 	~ConnectDialog();
-	Receiver* GetConnectedReceiver();
+	void setMonitor( Monitor* );
 public slots:
 	void onConnect();
 private:
@@ -37,6 +38,7 @@ private:
 	QDialogButtonBox *buttonBox;
 
 	Receiver* clientReceiver;
+	Monitor* monitor;
 };
 
 #endif // CONNECTDIALOG_H

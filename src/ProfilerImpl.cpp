@@ -41,52 +41,12 @@ void ProfileEnd( ProfileHandle* handle )
 	handle->bEnded = true;
 }
 
-#if 0
-/*
-===========================================
-class SerializedProfileData
-usage: serialize profileData to Json-like streams per capture
-===========================================
-*/
-class SerializedProfileData
-{
-public:
-	void BeginFrame( long long index, double time );
-	void AddEntry( const char*, double time );
-	void EndFrame();
-private:
-	std::string serializedData;
-};
-
-//-----------------------------------------------------------------------
-void SerializedProfileData::BeginFrame( long long index, double time )
-{
-	char buffer[256];
-	sprintf_s( &buffer[0], 256, "{\"Frame\":%d,\"Time\":%f,\"Entries\":[", (int)index, (float)time );
-	serializedData += buffer;
-}
-
-//-----------------------------------------------------------------------
-void SerializedProfileData::AddEntry( const char* fileName, double time )
-{
-	char buffer[256];
-	sprintf_s( &buffer[0], 256, "{\"Name\":\"%s\",\"Time\":%f},", fileName, (float)time );
-	serializedData += buffer;
-}
-
-//-----------------------------------------------------------------------
-void SerializedProfileData::EndFrame()
-{
-	serializedData += "]}";
-}
-
-#endif
-
 static LARGE_INTEGER		sFrequencyRT;
 static double				sClocksToMilisecondsMultiplier;
 static LARGE_INTEGER		sFrameBeginClocks;
 static LARGE_INTEGER		sFrameClocksBuiltUp;
 static long long			sClocksPerSample;
+static LARGE_INTEGER		sClocksSinceInitialization;
 
 static struct ProfileInitializer
 {
@@ -94,33 +54,38 @@ static struct ProfileInitializer
 	~ProfileInitializer(){}
 } s_localInitializer;
 
+//-----------------------------------------------------------------------
 ProfileInitializer::ProfileInitializer()
 {
 	QueryPerformanceFrequency( &sFrequencyRT );
 	sClocksToMilisecondsMultiplier = 1000.0 / ( double )sFrequencyRT.QuadPart;
 	sClocksPerSample = ( long long )( (double)TIME_PER_SAMPLE * (double)sFrequencyRT.QuadPart * 0.001 );
 	sFrameClocksBuiltUp.QuadPart = 0;
+	QueryPerformanceCounter( &sClocksSinceInitialization );
 }
 
+//-----------------------------------------------------------------------
 void FrameBegin()
 {
 	QueryPerformanceCounter( &sFrameBeginClocks );
 }
 
-
+//-----------------------------------------------------------------------
 void FrameEnd()
 {
 	LARGE_INTEGER endClocks;
 	QueryPerformanceCounter( &endClocks );
-	static long long numFrame = 0;		// Number of frames captured 
+	static unsigned long numFrame = 0;		// Number of frames captured 
 	sFrameClocksBuiltUp.QuadPart += endClocks.QuadPart - sFrameBeginClocks.QuadPart;
 	++ numFrame;
 	if( sFrameClocksBuiltUp.QuadPart > sClocksPerSample )
 	{
 		sFrameResult data;
 		double frameTime = (double)sFrameClocksBuiltUp.QuadPart * sClocksToMilisecondsMultiplier;
+		double timeStamp = (double)( endClocks.QuadPart - sClocksSinceInitialization.QuadPart ) *  sClocksToMilisecondsMultiplier;
 		data.SetNumFrames( numFrame );
 		data.SetLength( frameTime );
+		data.SetTimestamp( timeStamp );
 		numFrame = 0;
 		//Calculate summary
 		for( auto itr = handleToName.begin();
@@ -143,7 +108,6 @@ void FrameEnd()
 		sFrameClocksBuiltUp.QuadPart = 0;
 	}
 }
-
 
 //-----------------------------------------------------------------------
 sProfileEntry::sProfileEntry()
@@ -170,7 +134,7 @@ const char* sProfileEntry::GetName() const
 }
 
 //-----------------------------------------------------------------------
-float sProfileEntry::GetTime() const
+double sProfileEntry::GetTime() const
 {
 	return time;
 }
@@ -185,7 +149,7 @@ sFrameResult::sFrameResult()
 //-----------------------------------------------------------------------
 sFrameResult::~sFrameResult()
 {
-	for( sProfileEntry* itr = firstEntry; itr != lastEntry; )
+	for( sProfileEntry* itr = firstEntry; itr; )
 	{
 		sProfileEntry* _current = itr;
 		itr = itr->Next();
@@ -194,15 +158,21 @@ sFrameResult::~sFrameResult()
 }
 
 //-----------------------------------------------------------------------
-int sFrameResult::GetNumFrames() const 
+unsigned long sFrameResult::GetNumFrames() const 
 {
-	return numFrames;
+	return m_numFrames;
 }
 
 //-----------------------------------------------------------------------
-float sFrameResult::GetLength() const
+double sFrameResult::GetLength() const
 {
 	return m_length;
+}
+
+//-----------------------------------------------------------------------
+double sFrameResult::GetTimeStamp() const
+{
+	return m_timeStamp;
 }
 
 //-----------------------------------------------------------------------
@@ -212,19 +182,25 @@ sProfileEntry* sFrameResult::GetFirstProfileEntry() const
 }
 
 //-----------------------------------------------------------------------
-void sFrameResult::SetNumFrames( int numFrames )
+void sFrameResult::SetNumFrames( unsigned long numFrames )
 {
-	numFrames = numFrames;
+	m_numFrames = numFrames;
 }
 
 //-----------------------------------------------------------------------
-void sFrameResult::SetLength( float time )
+void sFrameResult::SetLength( double time )
 {
 	m_length = time;
 }
 
 //-----------------------------------------------------------------------
-void sFrameResult::AddEntry( const char* name, float time )
+void sFrameResult::SetTimestamp( double timeStamp )
+{
+	m_timeStamp = timeStamp;
+}
+
+//-----------------------------------------------------------------------
+void sFrameResult::AddEntry( const char* name, double time )
 {
 	if( lastEntry == NULL )
 	{
@@ -242,8 +218,9 @@ void sFrameResult::AddEntry( const char* name, float time )
 //-----------------------------------------------------------------------
 void sFrameResult::operator >>( std::stringstream& outputStream ) const
 {
-	outputStream << "{\"Frame\":" << (int)GetNumFrames() << ","
-		<< "\"Time\":" << (float)GetLength() <<","
+	outputStream << "{\"Frame\":" << (unsigned long)GetNumFrames() << ","
+		<< "\"Time\":" << (double)GetLength() <<","
+		<< "\"TimeStamp\":" << (double)m_timeStamp <<","
 		<< "\"Entries\":[";
 
 	for( sProfileEntry* it = GetFirstProfileEntry(); it; it = it->Next() )
@@ -273,12 +250,111 @@ void sFrameResult::operator >>( std::stringstream& outputStream ) const
 }
 ]
 }
-
 */
 }
 
 //-----------------------------------------------------------------------
 void sFrameResult::operator<<( std::stringstream& inputStream )
 {
-	//inputStream.ignore( )
+	inputStream.seekg(0, std::ios_base::end);
+	std::streamoff bufferSize = inputStream.tellg();
+	inputStream.seekg(0, std::ios_base::beg);
+	std::vector<char> buffer( (unsigned int)bufferSize + 1 );
+	for( sProfileEntry* itr = firstEntry; itr; )
+	{
+		sProfileEntry* _current = itr;
+		itr = itr->Next();
+		delete _current;
+	}
+	firstEntry = NULL;
+	lastEntry = NULL;
+	//Try to deserialize property
+	for(;;)
+	{
+		inputStream.getline( &buffer[0], bufferSize, '\"');
+		inputStream.getline( &buffer[0], bufferSize, '\"');
+		std::string PropertyName( &buffer[0] );
+		if( PropertyName == "Frame" )
+		{
+			inputStream.getline( &buffer[0], bufferSize, ':' );
+			unsigned long _frm = 0;
+			inputStream >> _frm;
+			this->SetNumFrames( _frm );
+		}else if( PropertyName == "Time" )
+		{
+			inputStream.getline( &buffer[0], bufferSize, ':' );
+			double _time = 0;
+			inputStream >> _time;
+			this->SetLength( _time );
+		}else if( PropertyName == "TimeStamp" )
+		{
+			inputStream.getline( &buffer[0], bufferSize, ':' );
+			double _timeStamp = 0;
+			inputStream >> _timeStamp;
+			this->SetTimestamp( _timeStamp );
+		}else if( PropertyName == "Entries" )
+		{
+			inputStream.getline( &buffer[0], bufferSize, ':' );
+			inputStream.getline( &buffer[0], bufferSize, '[');
+			for(;;)
+			{
+				inputStream.getline( &buffer[0], bufferSize, '{' );
+				double _entryTime = 0;
+				std::string _entryName;
+				for(;;)
+				{
+					inputStream.getline( &buffer[0], bufferSize, '\"' );
+					inputStream.getline( &buffer[0], bufferSize, '\"' );
+					std::string entityPropery = &buffer[0];
+					if( entityPropery == "Name" )
+					{
+						inputStream.getline( &buffer[0], bufferSize, '\"' );
+						inputStream.getline( &buffer[0], bufferSize, '\"' );
+						_entryName = &buffer[0];
+					}else if( entityPropery == "Time" )
+					{
+						inputStream.getline( &buffer[0], bufferSize, ':' );
+						inputStream >> _entryTime;
+					}
+					char nextCharacter;
+					inputStream >> nextCharacter;
+					if( nextCharacter == ',' )
+						continue;
+					else
+					{
+						std::streamoff currentPos = inputStream.tellg();
+						inputStream.seekg( currentPos - 1, std::ios_base::beg);
+						break;
+					}
+				}
+				this->AddEntry( _entryName.c_str(), _entryTime );
+				inputStream.getline( &buffer[0], bufferSize, '}' );
+				char nextCharacter;
+				inputStream >> nextCharacter;
+				if( nextCharacter == ',' )
+					continue;
+				else
+				{
+					std::streamoff currentPos = inputStream.tellg();
+					inputStream.seekg( currentPos - 1, std::ios_base::beg);
+					break;
+				}
+			}
+			inputStream.getline( &buffer[0], bufferSize, ']' );
+		}else
+		{
+
+		}
+		char nextCharacter;
+		inputStream >> nextCharacter;
+		if( nextCharacter == ',' )
+			continue;
+		else
+		{
+			std::streamoff currentPos = inputStream.tellg();
+			inputStream.seekg( currentPos - 1, std::ios_base::beg);
+			break;
+		}
+	}
+	
 }
