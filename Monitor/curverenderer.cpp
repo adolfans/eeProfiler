@@ -5,12 +5,15 @@
 
 #define PIXELS_PER_SECOND	15		//To calculate x position
 #define PXIELS_PER_TEN_MILLIONSECONDS 15	//To calcualte y position
+#define MINIMUM_HEIGHT				150
 
 CurveRenderer::CurveRenderer(QWidget *parent)
 	: QWidget(parent),
 	range( 30 )
 {
-	this->setMinimumHeight( 200 );
+	this->setMinimumHeight( 150 );
+	lastFixRangeTime = 0.0f;
+	rangeChanged = true;
 }
 
 CurveRenderer::~CurveRenderer()
@@ -25,8 +28,6 @@ void CurveRenderer::AddValue( float time, float value )
 	time = time * 0.001;
 	value = value * 0.001;
 
-	static int _testIIII = 0;
-
 	wireGridTimeOffset = fmod( time, 1.0f );
 
 	value = PXIELS_PER_TEN_MILLIONSECONDS * value * 0.01;
@@ -36,26 +37,45 @@ void CurveRenderer::AddValue( float time, float value )
 		float moveLeftOffsetOfTime = time - lastTime;
 		for( int i = 0; i != values.size(); ++ i )
 		{
-			values[i].setX( values[i].x() - moveLeftOffsetOfTime * PIXELS_PER_SECOND );
+			values[i].setX( values[i].x() - moveLeftOffsetOfTime * PIXELS_PER_SECOND  );
 		}
 		float _range = - values[0].x();
 		if( _range > range * PIXELS_PER_SECOND )
 		{
 			values.remove( 0 );
 		}
-		values.push_back( QPointF( 0.0f, value * PIXELS_PER_SECOND * 500 ) );
-		_testIIII += 1 ;
-
-		if( value > yValueMax )	yValueMax = value;
-		if( value < yValueMin ) yValueMin = value;
-
+		values.push_back( QPointF( 0.0f, value  ) );
+		if( value > yValueMax )
+		{
+			yValueMax = value;
+			rangeChanged = true;
+		}
+		if( value < yValueMin )
+		{
+			yValueMin = value;
+			rangeChanged = true;
+		}
 		lastTime = time;
+		if( rangeChanged && values.size() < range  )
+		{
+			float _yValueRangeFix = ( yValueMax - yValueMin ) * .3;
+			yMinForRenderRange = yValueMin - _yValueRangeFix;
+			yMaxForRenderRange = yValueMax + _yValueRangeFix;
+			lastFixRangeTime = time;
+			rangeChanged = false;
+		}else if( rangeChanged && time - lastFixRangeTime > (float)range )
+		{
+			float _yValueRangeFix = ( yValueMax - yValueMin ) * .2;
+			yMinForRenderRange = yValueMin - _yValueRangeFix;
+			yMaxForRenderRange = yValueMax + _yValueRangeFix;
+			lastFixRangeTime = time;
+			rangeChanged = false;
+		}
 	}else
 	{
 		yValueMin = yValueMax = value;
-		values.push_back( QPointF( 0.0f, value * PIXELS_PER_SECOND * 500 ) );
+		values.push_back( QPointF( 0.0f, value ) );
 		lastTime = time;
-		_testIIII += 1 ;
 	}
 	update();
 }
@@ -68,6 +88,8 @@ void CurveRenderer::SetRange( int seconds )
 	//this->centerOn( xCenter, oldCenterScenePoint.y() );
 }
 
+#include "qmath.h"
+
 //------------------------------------------------------------------------
 void CurveRenderer::paintEvent( QPaintEvent *event )
 {
@@ -75,15 +97,23 @@ void CurveRenderer::paintEvent( QPaintEvent *event )
 
 	QPainter painter;
 	painter.begin(this);
-	//painter.setRenderHint(QPainter::Antialiasing);
 	painter.translate( rect.width(), 0 );
 	
 	if( values.size() )
 	{
+		float _scale = (float)rect.height() / ( yMaxForRenderRange - yMinForRenderRange );
+		float _offset = yMinForRenderRange;
+
+		QPolygonF pts4Draw;
 		for( int i = 0; i != values.size(); ++ i )
 		{
-			painter.drawPolyline( values );
+			pts4Draw.push_back( QPointF( values[i].rx(), rect.height() - ( ( values[i].ry() - _offset ) * _scale ) ) );
 		}
+		painter.setRenderHint(QPainter::Antialiasing);
+		painter.drawPolyline( pts4Draw );
+		painter.setRenderHint(QPainter::Antialiasing, false);
+		painter.resetTransform();
+		painter.translate( rect.width(), 0 );
 	}
 
 	//draw wiregrid

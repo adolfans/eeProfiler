@@ -33,6 +33,12 @@ public:
 	QPolygonF values;
 
 	float lastTime;
+
+	float lastFixRangeTime;
+	bool rangeChanged;
+
+	float yMinForRenderRange;
+	float yMaxForRenderRange; 
 private:
 };
 

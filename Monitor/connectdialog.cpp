@@ -72,7 +72,7 @@ ConnectDialog::ConnectDialog(QWidget *parent)
 
 	setLayout(mainLayout);
 
-	hostLineEdit->setText( "10.1.103.7" );
+	hostLineEdit->setText( "127.0.0.1" );
 	portLineEdit->setText( "55553" );
 
 	clientReceiver = new Receiver;

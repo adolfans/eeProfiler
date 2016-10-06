@@ -18,24 +18,24 @@ int _tmain(int argc, _TCHAR* argv[])
 	for( ; ; )
 	{
 		FrameBegin();
-		printf( "FrameBegin\n" );
+		//printf( "FrameBegin\n" );
 		//sleep for 5~8 milliseconds
 		int _s1 = rand() % 3 + 5;
 		Sleep( (DWORD)( _s1 ) );
 		static ProfileHandle* _some = CreateProfileHandle( "test" );
 		ProfileBegin( _some );
-		printf( "ProfileBegin(\"test\")\n" );
+		//printf( "ProfileBegin(\"test\")\n" );
 		//sleep for 5~8 milliseconds
 		int _s2 = rand() % 3 + 5;
 		Sleep( (DWORD)( _s2 ) );
 		ProfileEnd( _some );
-		printf( "ProfileEnd\n" );
+		//printf( "ProfileEnd\n" );
 		//sleep for 5~9 milliseconds
 		int _s3 = rand() % 3 + 6;
 		Sleep( (DWORD)( _s3 ) );
 		FrameEnd();
-		printf( "FrameEnd\n" );
-		sleptTimeBuiltUp += _s1 + _s2 + _s3;
+		//printf( "FrameEnd\n" );
+		sleptTimeBuiltUp += ( _s1 + _s2 + _s3 );
 		if( sleptTimeBuiltUp > TEST_TIME_LENGTH )
 		{
 			break;

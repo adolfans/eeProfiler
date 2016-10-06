@@ -13,10 +13,6 @@ Monitor::Monitor(QWidget *parent, Qt::WFlags flags)
 	verticalLayout = ui.verticalLayout;
 	scrollAreaWidgetContents = ui.scrollAreaWidgetContents;
 
-	frameGroupBox = new QGroupBox(scrollAreaWidgetContents);
-	frameGroupBox->setTitle("Frame");
-	verticalLayout->addWidget(frameGroupBox);
-
 }
 
 //-----------------------------------------------------------------------
@@ -53,6 +49,10 @@ void Monitor::handleResults( sFrameResult* rs )
 	
 	if( !frameCurveRenderer )
 	{
+		frameGroupBox = new QGroupBox(scrollAreaWidgetContents);
+		frameGroupBox->setTitle("Frame");
+		verticalLayout->addWidget(frameGroupBox);
+
 		QVBoxLayout* layoutInGroupBox = new QVBoxLayout(frameGroupBox);
 		layoutInGroupBox->setSpacing(6);
 		layoutInGroupBox->setContentsMargins(11, 11, 11, 11);
@@ -71,7 +71,11 @@ void Monitor::handleResults( sFrameResult* rs )
 			itr = idToCurveRenderer.find( entryId );
 		if( itr == idToCurveRenderer.end() )
 		{
-			QVBoxLayout* layoutInGroupBox = new QVBoxLayout(frameGroupBox);
+			QGroupBox* groupBox = new QGroupBox(scrollAreaWidgetContents);
+			groupBox->setTitle( entry->GetName() );
+			verticalLayout->addWidget(groupBox);
+
+			QVBoxLayout* layoutInGroupBox = new QVBoxLayout(groupBox);
 			layoutInGroupBox->setSpacing(6);
 			layoutInGroupBox->setContentsMargins(11, 11, 11, 11);
 			CurveRenderer* entryCurveRenderer = new CurveRenderer( this );
