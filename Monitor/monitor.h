@@ -4,10 +4,13 @@
 #include <QtGui/QMainWindow>
 #include "ui_monitor.h"
 #include <QThread>
+#include "ProfilerClient.h"
 class Receiver;
 class sFrameResult;
-#include "ProfilerClient.h"
-//Q_DECLARE_METATYPE ( sFrameResult* )
+class CurveRenderer;
+class QScrollArea;
+class QGroupBox;
+
 /*
 ===========================================
 class Monitor
@@ -30,7 +33,12 @@ signals:
 private:
 	QThread		receiveThread;
 	Ui::MonitorClass ui;
-	Receiver* connectedReceiver;
+	Receiver*		connectedReceiver;
+	QVBoxLayout*	verticalLayout;
+	QWidget*		scrollAreaWidgetContents;
+	QGroupBox*		frameGroupBox;
+	CurveRenderer*	frameCurveRenderer;
+	QMap<long,CurveRenderer*> idToCurveRenderer;
 };
 
 

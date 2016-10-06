@@ -8,21 +8,30 @@
 #include "ProfilerNetwork.h"
 #include "CollectedResults.h"
 
-#define TIME_PER_SAMPLE 1000			//Commit one result every 1000 milliseconds
+#define TIME_PER_SAMPLE 200			//Commit one result every 200 milliseconds
 
 struct ProfileHandle
 {
 	LARGE_INTEGER startClocks;
 	LARGE_INTEGER clocksBuiltUp;
+	long		id;
 	bool		bEnded;
+	std::string name;
 };
 
-static std::map<ProfileHandle*, std::string> handleToName;
+static std::map<long, ProfileHandle*> IdToProfileHandlePtr;
+static long profileId;
 
 ProfileHandle* CreateProfileHandle( const char* pName )
 {
 	ProfileHandle* handle = new ProfileHandle();
-	handleToName[handle] = pName;
+	handle->name = pName;
+	handle->id = profileId;
+	handle->clocksBuiltUp.QuadPart = 0;
+	handle->startClocks.QuadPart = 0;
+	handle->bEnded = true;
+	IdToProfileHandlePtr[profileId] = handle;
+	profileId ++;
 	return handle;
 }
 
@@ -88,24 +97,32 @@ void FrameEnd()
 		data.SetTimestamp( timeStamp );
 		numFrame = 0;
 		//Calculate summary
-		for( auto itr = handleToName.begin();
-			itr != handleToName.end();
+		for( auto itr = IdToProfileHandlePtr.begin();
+			itr != IdToProfileHandlePtr.end();
 			++ itr )
 		{
-			ProfileHandle* handle = itr->first;
+			ProfileHandle* handle = itr->second;
 			if( !handle->bEnded )
 			{
 				handle->clocksBuiltUp.QuadPart += endClocks.QuadPart - handle->startClocks.QuadPart;
 				handle->startClocks.QuadPart = endClocks.QuadPart;
+			}else
+			{
+				double timeSum = (double)handle->clocksBuiltUp.QuadPart * sClocksToMilisecondsMultiplier;
+				data.AddEntry( handle->name.c_str(), timeSum, handle->id );
+				handle->clocksBuiltUp.QuadPart = 0;
 			}
-			double timeSum = (double)itr->first->clocksBuiltUp.QuadPart * sClocksToMilisecondsMultiplier;
-			data.AddEntry( itr->second.c_str(), timeSum );
 		}
 		std::stringstream strm;
 		data >> strm;
+		//std::stringstream copiedStrm;
+		//data >> copiedStrm;
 		sProfilePacket packet( strm );
 		SendPacket( packet );
 		sFrameClocksBuiltUp.QuadPart = 0;
+		//std::string _dataBuffer;
+		//copiedStrm >> _dataBuffer;
+		//printf( "%s\n", _dataBuffer.c_str() );
 	}
 }
 
@@ -137,6 +154,12 @@ const char* sProfileEntry::GetName() const
 double sProfileEntry::GetTime() const
 {
 	return time;
+}
+
+//-----------------------------------------------------------------------
+long sProfileEntry::GetId() const
+{
+	return id;
 }
 
 //-----------------------------------------------------------------------
@@ -200,18 +223,20 @@ void sFrameResult::SetTimestamp( double timeStamp )
 }
 
 //-----------------------------------------------------------------------
-void sFrameResult::AddEntry( const char* name, double time )
+void sFrameResult::AddEntry( const char* name, double time, long id )
 {
 	if( lastEntry == NULL )
 	{
 		firstEntry = lastEntry = new sProfileEntry;
 		firstEntry->name = name;
 		firstEntry->time = time;
+		firstEntry->id = id;
 	}else
 	{
 		lastEntry->next = new sProfileEntry;
 		lastEntry->next->name = name;
 		lastEntry->next->time = time;
+		lastEntry->next->id = id;
 	}
 }
 
@@ -227,6 +252,7 @@ void sFrameResult::operator >>( std::stringstream& outputStream ) const
 	{
 		outputStream << "{";
 		outputStream << "\"Name\":"<< "\""<<it->GetName()<<"\","
+			<< "\"Id\":"<<it->GetId()<<","
 			<< "\"Time\":"<<it->GetTime();
 		outputStream << "}";
 		if( it->Next() )
@@ -300,6 +326,7 @@ void sFrameResult::operator<<( std::stringstream& inputStream )
 			{
 				inputStream.getline( &buffer[0], bufferSize, '{' );
 				double _entryTime = 0;
+				long  _entryId = 0;
 				std::string _entryName;
 				for(;;)
 				{
@@ -315,6 +342,10 @@ void sFrameResult::operator<<( std::stringstream& inputStream )
 					{
 						inputStream.getline( &buffer[0], bufferSize, ':' );
 						inputStream >> _entryTime;
+					}else if( entityPropery == "Id" )
+					{
+						inputStream.getline( &buffer[0], bufferSize, ':' );
+						inputStream >> _entryId;
 					}
 					char nextCharacter;
 					inputStream >> nextCharacter;
@@ -327,7 +358,7 @@ void sFrameResult::operator<<( std::stringstream& inputStream )
 						break;
 					}
 				}
-				this->AddEntry( _entryName.c_str(), _entryTime );
+				this->AddEntry( _entryName.c_str(), _entryTime, _entryId );
 				inputStream.getline( &buffer[0], bufferSize, '}' );
 				char nextCharacter;
 				inputStream >> nextCharacter;

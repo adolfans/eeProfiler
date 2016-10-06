@@ -22,11 +22,13 @@ struct sProfileEntry
 	sProfileEntry* Next() const;
 	const char* GetName() const;
 	double GetTime() const;
+	long GetId() const;
 
 private:
 	std::string name;
 	double	time;
 	sProfileEntry* next;
+	long  id;
 };
 
 /*
@@ -52,7 +54,7 @@ public:
 	void SetNumFrames( unsigned long );
 	void SetLength( double time );
 	void SetTimestamp( double timeStamp );
-	void AddEntry( const char*, double time );
+	void AddEntry( const char*, double time, long id );
 
 	void operator >> ( std::stringstream& outputStream ) const;
 	void operator << ( std::stringstream& inputStream );

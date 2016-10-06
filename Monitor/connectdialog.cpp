@@ -72,6 +72,9 @@ ConnectDialog::ConnectDialog(QWidget *parent)
 
 	setLayout(mainLayout);
 
+	hostLineEdit->setText( "10.1.103.7" );
+	portLineEdit->setText( "55553" );
+
 	clientReceiver = new Receiver;
 }
 
@@ -98,6 +101,7 @@ void ConnectDialog::onConnect()
 	}else
 	{
 		accept();
+		monitor->Connected( this->clientReceiver );
 		monitor->show();
 	}
 }

@@ -8,14 +8,14 @@
 class curveRenderer
 ===========================================
 */
-class curveRenderer 
+class CurveRenderer 
 	: public QWidget
 {
 	Q_OBJECT
 
 public:
-	curveRenderer(QWidget *parent = 0);
-	~curveRenderer();
+	CurveRenderer(QWidget *parent = 0);
+	~CurveRenderer();
 
 	void paintEvent( QPaintEvent *event );
 
@@ -30,7 +30,9 @@ public:
 	float yValueMax;
 	float yValueMin;
 
-	QVector<QPointF> values;
+	QPolygonF values;
+
+	float lastTime;
 private:
 };
 
